@@ -6,11 +6,10 @@ A Bash script to automatically update Technitium DNS server records with your cu
 
 - **Automatic IP detection**: Queries multiple public IP services for current IPv4 and IPv6 addresses
 - **Dry-run mode**: Preview changes without updating DNS records
-- **Verbosity levels**: Control output verbosity (0=silent, 5=debug with HTTP requests and responses)
-- **Environment variables**: Set all parameters via CLI, environment, or `.env` file
+- **Verbosity levels**: Control output verbosity from 0=silent to 5=debug with HTTP requests and responses
 - **Environment variables**: Set all parameters via CLI, environment, or `.env` file
 - **Dependency checks**: Verifies required tools (`curl`, `jq` and `Bash 4.0+`) are installed
-- **Sensitive data warnings**: Alerts when credentials are stored in `.env` files at high verbosity
+- **Sensitive data warnings**: Alerts when credentials will be displayed at high verbosity
 
 ## Requirements
 
@@ -24,7 +23,7 @@ A Bash script to automatically update Technitium DNS server records with your cu
 Clone the repository and make the script executable:
 
 ```bash
-git clone <repository-url> technitium-update-ip
+git clone git@github.com:1stcall/technitium-update-ip.git
 cd technitium-update-ip
 chmod +x update-technitium-ip.sh
 ```
@@ -116,14 +115,14 @@ Run the script:
 
 | Level | Output |
 |-------|--------|
-| 0 | Silent (no output) |
-| 1 | Standard messages (default) |
-| 2 | More details |
-| 3 | Extended info |
-| 4 | Additional details |
-| 5 | Full config including HTTP requests and responses |
+| 0 | Silent; normal progress logging is suppressed |
+| 1 | Standard messages and summary actions (default) |
+| 2 | Additional detail such as current DNS records and dry-run specifics |
+| 3 | Extended info for more verbose workflows |
+| 4 | Additional operational detail |
+| 5 | Full debug output, including API request/response traces and configuration |
 
-**Warning**: Verbosity level 5 prints sensitive credentials if they are stored in a `.env` file.
+**Warning**: Verbosity level 4 or above prints sensitive values from the script configuration, so use it carefully with credentials in a `.env` file.
 
 ## Examples
 
@@ -199,7 +198,7 @@ Tests include:
   ```
 - Do not commit `.env` files to version control
 - Use token-based authentication when possible (`-t/--token`)
-- At verbosity level 5, sensitive values are printed—use cautiously in production
+- At verbosity level 4 or above, sensitive values are printed—use cautiously in production
 
 ## Troubleshooting
 

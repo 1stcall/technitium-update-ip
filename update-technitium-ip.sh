@@ -47,7 +47,7 @@ warn_sensitive_env() {
   if grep -E -q '^[[:space:]]*TECHNITIUM_TOKEN=' "${f}"; then has_token=true; fi
   if grep -E -q '^[[:space:]]*TECHNITIUM_PASS=' "${f}"; then has_pass=true; fi
   if grep -E -q '^[[:space:]]*TECHNITIUM_USER=' "${f}"; then has_user=true; fi
-  if { [[ "${has_token}" == true ]] || [[ "${has_pass}" == true ]] || [[ "${has_user}" == true ]]; } && [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 5 )); then
+  if { [[ "${has_token}" == true ]] || [[ "${has_pass}" == true ]] || [[ "${has_user}" == true ]]; } && [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 4 )); then
     >&2 echo -n "WARNING: sensitive variable(s) present in ${f}:"
     [[ "${has_token}" == true ]] && >&2 echo -n ' TECHNITIUM_TOKEN'
     [[ "${has_user}" == true ]] && >&2 echo -n ' TECHNITIUM_USER'
@@ -62,6 +62,29 @@ log() {
   local level="$1"; shift
   if [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= level )); then
     echo "$@"
+  fi
+}
+
+debug() {
+  if [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 4 )); then
+    echo "DEBUG: $*" >&2
+  fi
+}
+
+warn_sensitive_config() {
+  local source="${1:-configuration}"
+  local sensitive=()
+  [[ -n "${TECHNITIUM_TOKEN:-}" ]] && sensitive+=("TECHNITIUM_TOKEN")
+  [[ -n "${TECHNITIUM_USER:-}" ]] && sensitive+=("TECHNITIUM_USER")
+  [[ -n "${TECHNITIUM_PASS:-}" ]] && sensitive+=("TECHNITIUM_PASS")
+
+  if [[ ${#sensitive[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  if [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 4 )); then
+    >&2 echo "WARNING: sensitive credential(s) present in ${source}: ${sensitive[*]}"
+    >&2 echo "These values may be printed at verbose level above 3. Use caution with secret credentials."
   fi
 }
 
@@ -164,7 +187,7 @@ login_token() {
   local url
   url=$(api_url "api/user/login" user "${TECHNITIUM_USER}" pass "${TECHNITIUM_PASS}" includeInfo true)
   local response
-  if [[ "${VERBOSE}" -ge 5 ]]; then
+  if [[ "${VERBOSE}" -ge 4 ]]; then
     echo "DEBUG: GET ${url}" >&2
   fi
   response=$(curl -L -sS --fail --show-error "${url}") || fatal "Failed to login to Technitium API"
@@ -189,6 +212,7 @@ get_public_ip() {
   fi
   for service in "${services[@]}"; do
     local ip
+    debug "Trying ${service} for ${mode} public IP"
     if [[ "${mode}" == "ipv6" ]]; then
       ip=$(curl -6 -sS --fail --show-error --max-time 10 "${service}" 2>/dev/null || true)
     else
@@ -198,6 +222,7 @@ get_public_ip() {
       ip=$(printf '%s' "${ip}" | tr -d '[:space:]')
       if [[ "${mode}" == "ipv4" && "${ip}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
          [[ "${mode}" == "ipv6" && "${ip}" =~ ^[0-9A-Fa-f:]+$ ]]; then
+        debug "Detected public ${mode} IP ${ip} from ${service}"
         echo "${ip}"
         return 0
       fi
@@ -219,7 +244,7 @@ fetch_record_values() {
     # Include domain in the zone-wide request; some Technitium API versions
     # require the 'domain' parameter even for zone-scoped queries.
     url=$(api_url "api/zones/records/get" domain "${DOMAIN}" zone "${ZONE}" listZone false)
-    if [[ "${VERBOSE}" -ge 5 ]]; then
+    if [[ "${VERBOSE}" -ge 4 ]]; then
       echo "DEBUG: GET ${url}" >&2
     fi
     response=$(curl -L --location-trusted -sS --fail --show-error -H "Authorization: Bearer ${TECHNITIUM_TOKEN}" "${url}")
@@ -251,7 +276,7 @@ fetch_record_values() {
   # If zone-wide lookup did not return results (or no zone specified), query
   # the API filtered by domain and return any matching records.
   url=$(api_url "api/zones/records/get" domain "${DOMAIN}" ${ZONE:+zone "${ZONE}"} listZone false)
-  if [[ "${VERBOSE}" -ge 5 ]]; then
+  if [[ "${VERBOSE}" -ge 4 ]]; then
     echo "DEBUG: GET ${url}" >&2
   fi
   response=$(curl -L --location-trusted -sS --fail --show-error -H "Authorization: Bearer ${TECHNITIUM_TOKEN}" "${url}")
@@ -292,7 +317,7 @@ perform_update() {
   else
     url=$(api_url "api/zones/records/update" domain "${DOMAIN}" type "${type}" ipAddress "${old_ip}" newIpAddress "${new_ip}" ttl "${TTL}" ptr "${CREATE_PTR}")
   fi
-  if [[ "${VERBOSE}" -ge 5 ]]; then
+  if [[ "${VERBOSE}" -ge 4 ]]; then
     echo "DEBUG: POST ${url}" >&2
   fi
   curl -L --location-trusted -sS --fail --show-error -X POST -H "Authorization: Bearer ${TECHNITIUM_TOKEN}" "${url}"
@@ -308,7 +333,7 @@ perform_add() {
   else
     url=$(api_url "api/zones/records/add" domain "${DOMAIN}" type "${type}" ttl "${TTL}" overwrite true ipAddress "${new_ip}" ptr "${CREATE_PTR}")
   fi
-  if [[ "${VERBOSE}" -ge 5 ]]; then
+  if [[ "${VERBOSE}" -ge 4 ]]; then
     echo "DEBUG: POST ${url}" >&2
   fi
   curl -L --location-trusted -sS --fail --show-error -X POST -H "Authorization: Bearer ${TECHNITIUM_TOKEN}" "${url}"
@@ -321,27 +346,33 @@ process_record() {
   local existing
   existing=$(fetch_record_values "${type}" || true)
 
-  log 1 "${type} public IP: ${public_ip:-<none>}"
+  if [[ -n "${public_ip}" ]]; then
+    log 1 "${type} public IP: ${public_ip}"
+  else
+    log 1 "${type} public IP: <none>"
+  fi
+
   if [[ -z "${existing}" ]]; then
-    log 1 "${type} DNS record: none"
+    log 2 "${type} DNS record: none"
   else
     log 1 "${type} DNS record(s):"
     while IFS= read -r record_ip; do
       [[ -z "${record_ip}" ]] && continue
-      log 1 "  - ${record_ip}"
+      log 2 "  - ${record_ip}"
     done <<<"${existing}"
   fi
 
   if [[ -z "${public_ip}" ]]; then
-    log 1 "No public ${type} address available; no update performed."
+    log 1 "No public ${type} address available; skipping ${type} update."
     return
   fi
 
   if [[ -z "${existing}" ]]; then
     if [[ "${DRYRUN}" == true ]]; then
-      log 1 "Dry-run: would add ${type} record ${DOMAIN} -> ${public_ip}"
+      log 1 "Dry-run: would add ${type} record for ${DOMAIN}"
+      log 2 "Dry-run detail: ${type} ${DOMAIN} -> ${public_ip}"
     else
-      log 1 "No existing ${type} record found; adding a new record"
+      log 1 "No existing ${type} record found; adding a new record."
       perform_add "${type}" "${public_ip}"
       log 1 "${type} record created: ${DOMAIN} -> ${public_ip}"
     fi
@@ -355,12 +386,12 @@ process_record() {
       if [[ "${DRYRUN}" == true ]]; then
         log 1 "Dry-run: would update ${type} record from ${old_ip} to ${public_ip}"
       else
-        log 1 "Updating ${type} record from ${old_ip} to ${public_ip}"
+        log 1 "Updating ${type} record from ${old_ip} to ${public_ip}."
         perform_update "${type}" "${old_ip}" "${public_ip}"
       fi
       updated=true
     else
-      log 1 "${type} record already matches ${public_ip}; no update needed"
+      log 2 "${type} record already matches ${public_ip}; no update needed"
     fi
   done <<<"${existing}"
 
@@ -442,12 +473,13 @@ main() {
   CREATE_PTR="${CREATE_PTR:-false}"
   DRYRUN="${DRYRUN:-false}"
   VERBOSE="${VERBOSE:-1}"
-    warn_sensitive_env "${ENV_FILE}"
   parse_args "$@"
+  warn_sensitive_env "${ENV_FILE}"
+  warn_sensitive_config "script configuration"
   TECHNITIUM_TOKEN="$(login_token)"
 
-  # Verbosity level 5 prints current configuration (sensitive values included).
-  if [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 5 )); then
+  # Verbosity level >=4 prints current configuration (sensitive values included).
+  if [[ "${VERBOSE}" =~ ^[0-9]+$ ]] && (( VERBOSE >= 4 )); then
     echo "VERBOSE: ${VERBOSE}"
     echo "TECHNITIUM_HOST=${TECHNITIUM_HOST}"
     echo "TECHNITIUM_TOKEN=${TECHNITIUM_TOKEN}"
