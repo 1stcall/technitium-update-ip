@@ -1,231 +1,164 @@
-# Technitium DNS Update IP
+# Technitium Dynamic DNS (DDNS) Updater Script
 
-A Bash script to automatically update Technitium DNS server records with your current public IP addresses (IPv4 and IPv6).
+A production-hardened Bash script to automatically monitor and update your public IPv4 (`A`) and IPv6 (`AAAA`) records using the **Technitium DNS Server API**. 
 
-## Features
+Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration management (CLI flags, environment variables, and config files), and comprehensive error safety handling.
 
-- **Automatic IP detection**: Queries multiple public IP services for current IPv4 and IPv6 addresses
-- **Dry-run mode**: Preview changes without updating DNS records
-- **Verbosity levels**: Control output verbosity from 0=silent to 5=debug with HTTP requests and responses
-- **Environment variables**: Set all parameters via CLI, environment, or `.env` file
-- **Dependency checks**: Verifies required tools (`curl`, `jq` and `Bash 4.0+`) are installed
-- **Sensitive data warnings**: Alerts when credentials will be displayed at high verbosity
+## DDNS Features
 
-## Requirements
+* **Dual-Stack Execution:** Updates both `A` (IPv4) and `AAAA` (IPv6) records automatically.
+* **Robust Hardening:** Implements strict `set -euo pipefail` error tracing to ensure clean terminations and execution safety.
+* **Smart Overwrites:** Utilizes Technitium's robust `/records/add` endpoint with `overwrite=true` to safely synchronize entries even if state records are missing or corrupted.
+* **Native PTR Automation:** Features standard `-p` support to request native reverse DNS allocation updates via Technitium (`ptr=true`, `createPtrZone=true`).
+* **Layered Precedence Configuration:** Respects configurations in the following priority sequence:
+    Command Line Flags -> Environment Variables -> Config File -> Defaults
 
-- Bash 4.0+
-- `curl`
-- `jq`
-- Access to a Technitium DNS server with API enabled
+---
 
-## Installation
+## Prerequisites and Dependencies
 
-Clone the repository and make the script executable:
+### Runtime Dependencies
+To use this script in production, you only need standard lightweight CLI networking utilities:
+* **Bash v4.0** or newer
+* `curl` (for making API calls and public IP lookups)
+* `jq` (for parsing JSON responses cleanly)
+
+To install runtime dependencies on Debian/Ubuntu:
+```bash
+sudo apt update && sudo apt install curl jq -y
+```
+
+### Development and Testing Dependencies
+If you are modifying the script or running the unit tests locally, you will need the following automated testing frameworks:
+* **BATS (Bash Automated Testing System):** An industry-standard TAP-compliant testing framework for Bash.
+* `bats-assert / bats-support (Optional):` Libraries for enhanced assertions.
+
+To install development dependencies:
+```bash
+# Ubuntu/Debian
+sudo apt install bats
+
+# macOS
+brew install bats-core
+```
+
+---
+
+## Configuration Setup
+
+You can configure the behavior of the updater script in three different ways:
+
+### 1. Configuration File (Recommended)
+Create a file named `tddns.conf` in the same directory as the script. All parameters inside must be prefixed with `TDDNS_`:
+
+```ini
+# tddns.conf
+TDDNS_SERVER_URL=http://192.168.1.100:5380
+TDDNS_API_TOKEN=your_secret_api_token_here
+TDDNS_ZONE=example.com
+TDDNS_DOMAIN=example.com
+TDDNS_TTL=3600
+```
+
+### 2. Environment Variables
+Perfect for custom system variables, shell orchestration profiles, or containers:
 
 ```bash
-git clone git@github.com:1stcall/technitium-update-ip.git
-cd technitium-update-ip
-chmod +x update-technitium-ip.sh
+export TDDNS_API_TOKEN="your_secret_api_token_here"
+export TDDNS_DOMAIN="home.example.com"
 ```
 
-## Usage
+### 3. Command Line Arguments
+Flags always win and overwrite values provided by environment profiles or configurations:
 
-### Basic Usage
+| Short Flag | Long Flag | Description |
+| :--- | :--- | :--- |
+| `-f` | `--config` | Custom path to configuration file (Default: `./tddns.conf`) |
+| `-s` | `--server` | Technitium Server Base URL |
+| `-t` | `--token` | Technitium API Token with Zone Modify rights |
+| `-z` | `--zone` | Targeted Parent DNS Zone name |
+| `-d` | `--domain` | Domain name string or FQDN to be updated |
+| `-l` | `--ttl` | Record cache lifetime context (Default: `3600`) |
+| `-p` | `--ptr` | Instruct Technitium to generate/update corresponding PTR record |
+| `-c` | `--check-only` | Run in dry-run/check-only mode without executing API mutations |
+| `-v` | `--verbose` | Output debug traces and prettified raw JSON responses |
 
-Update DNS record with current public IP:
+---
 
+## Usage Examples
+
+Make the script executable before running it:
 ```bash
-./update-technitium-ip.sh \
-  -d example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -u admin \
-  -p password
+chmod +x tddns.sh
 ```
 
-### Dry-Run (Preview Changes)
-
+**Run using local config file configuration:**
 ```bash
-./update-technitium-ip.sh \
-  -d example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -u admin \
-  -p password \
-  --dryrun
+./tddns.sh
 ```
 
-### Using Environment Variables
-
+**Perform a dry run with verbose logging to test setups:**
 ```bash
-export TECHNITIUM_HOST=http://dns-server:5380
-export TECHNITIUM_USER=admin
-export TECHNITIUM_PASS=password
-export DOMAIN=example.com
-export ZONE=example.com
-
-./update-technitium-ip.sh
+./tddns.sh --check-only --verbose
 ```
 
-### Using .env File
+---
 
-Create a `.env` file:
+## How to Test
 
-```
-TECHNITIUM_HOST=http://dns-server:5380
-TECHNITIUM_USER=admin
-TECHNITIUM_PASS=password
-DOMAIN=example.com
-ZONE=example.com
-VERBOSE=1
-```
+The project includes an automated suite in `test_tddns.bats` that tests the logic without hitting your actual Technitium DNS server or leaking tokens. It uses virtual sandboxes and mock binaries to simulate network state changes, matching/mismatching registry states, and missing runtime configurations.
 
-Run the script:
-
+To run the automated suite:
 ```bash
-./update-technitium-ip.sh --env-file .env
+bats test_tddns.bats
 ```
 
-### Help
+### What the Test Suite Checks:
+1. **Pristine Error Isolation:** Validates that the `set -euo pipefail` environment handles system dependencies safely.
+2. **Precedence Assertions:** Verifies that a CLI argument reliably wins over file and environment profiles.
+3. **State Engine Control:** Confirms that matching IPs gracefully skip the API loop, while an IP change safely forces a Technitium `/records/add` call with `overwrite=true`.
 
-```bash
-./update-technitium-ip.sh --help
-```
+---
 
-## Options
+## Automating with Cron
 
-| Option | Env Var | Description |
-|--------|---------|-------------|
-| `-d, --domain DOMAIN` | `DOMAIN` | Full record domain name (required) |
-| `-z, --zone ZONE` | `ZONE` | Zone name containing the record (optional) |
-| `-s, --server URL` | `TECHNITIUM_HOST` | API server base URL (default: http://localhost:5380) |
-| `-t, --token TOKEN` | `TECHNITIUM_TOKEN` | Bearer token (instead of user/pass) |
-| `-u, --user USER` | `TECHNITIUM_USER` | Login username |
-| `-p, --pass PASS` | `TECHNITIUM_PASS` | Login password |
-| `--ttl TTL` | `TTL` | TTL for records (default: 3600) |
-| `--no-ipv4` | `UPDATE_IPV4` | Skip IPv4 update |
-| `--no-ipv6` | `UPDATE_IPV6` | Skip IPv6 update |
-| `--ptr` | `CREATE_PTR` | Update PTR record if supported |
-| `--dryrun` | `DRYRUN` | Show changes without updating |
-| `--env-file FILE` | `ENV_FILE` | Load variables from file (default: .env) |
-| `-v, --verbose N` | `VERBOSE` | Verbosity level 0-5 (default: 1) |
-| `-h, --help` | | Show help message |
+To maintain a persistent sync pattern with your external infrastructure IPs, automate execution via a cron schedule profile.
 
-## Verbosity Levels
+1. Open your system crontab scheduler:
+   ```bash
+   crontab -e
+   ```
+2. Append a runtime statement. For example, to evaluate changes every **5 minutes**:
+   ```text
+   */5 * * * * /path/to/tddns.sh >> /var/log/tddns.log 2>&1
+   ```
 
-| Level | Output |
-|-------|--------|
-| 0 | Silent; normal progress logging is suppressed |
-| 1 | Standard messages and summary actions (default) |
-| 2 | Additional detail such as current DNS records and dry-run specifics |
-| 3 | Extended info for more verbose workflows |
-| 4 | Additional operational detail |
-| 5 | Full debug output, including API request/response traces and configuration |
-
-**Warning**: Verbosity level 4 or above prints sensitive values from the script configuration, so use it carefully with credentials in a `.env` file.
-
-## Examples
-
-### Update a subdomain with custom TTL
-
-```bash
-./update-technitium-ip.sh \
-  -d host.example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -u admin -p password \
-  --ttl 600
-```
-
-### Full verbosity with HTTP debugging
-
-```bash
-./update-technitium-ip.sh \
-  -d example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -u admin -p password \
-  --verbose 5
-```
-
-### Only update IPv4, skip IPv6
-
-```bash
-./update-technitium-ip.sh \
-  -d example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -u admin -p password \
-  --no-ipv6
-```
-
-### Use token-based authentication
-
-```bash
-./update-technitium-ip.sh \
-  -d example.com \
-  -z example.com \
-  -s http://dns-server:5380 \
-  -t your-api-token
-```
-
-## Scheduling with Cron
-
-Update DNS record every 5 minutes:
-
-```cron
-*/5 * * * * /home/user/technitium-update-ip/update-technitium-ip.sh --env-file /home/user/technitium-update-ip/.env >> /var/log/technitium-update.log 2>&1
-```
-
-## Testing
-
-Run the unit test suite:
-
-```bash
-./tests/run_tests.sh
-```
-
-Tests include:
-- Loading `.env` files
-- Sensitive data warnings
-- DNS record fetching with mocked API
-
-## Security
-
-- Store credentials in a `.env` file with restrictive permissions:
-  ```bash
-  chmod 600 .env
-  ```
-- Do not commit `.env` files to version control
-- Use token-based authentication when possible (`-t/--token`)
-- At verbosity level 4 or above, sensitive values are printed—use cautiously in production
-
-## Troubleshooting
-
-### "Failed to login to Technitium API"
-- Verify server URL is correct and accessible
-- Check username and password
-- Ensure API is enabled on Technitium server
-
-### "No public IP address found"
-- Check internet connectivity
-- Verify one or both of `--no-ipv4` / `--no-ipv6` are not set
-- Try with `--verbose 5` to see which public IP services are contacted
-
-### "Record not found" or no update occurs
-- Verify domain name and zone name are correct
-- Use `--dryrun` to see what the script detects
-- Check Technitium permissions for the logged-in user
+---
 
 ## License
 
-MIT
+This project is open-source software licensed under the **MIT License**.
 
-## Contributing
+```text
+MIT License
 
-Contributions are welcome! Please run tests before submitting pull requests.
+Copyright (c) 2026
 
-```bash
-./tests/run_tests.sh
-bash -n update-technitium-ip.sh
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```

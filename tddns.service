@@ -1,0 +1,16 @@
+[Unit]
+Description=Technitium DDNS Record Updater Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Adjust the path to match where your script is stored
+ExecStart=/usr/local/bin/tddns.sh
+# Runs the script with lower priority to stay lightweight
+Nice=19
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+[Install]
+WantedBy=multi-user.target

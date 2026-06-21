@@ -1,0 +1,8 @@
+TDDNS_SERVER_URL=http://127.0.0.1:5380
+TDDNS_API_TOKEN=<your-api-token>
+TDDNS_DOMAIN=yourdomain.example.com
+TDDNS_ZONE=example.com
+TDDNS_VERBOSE=false
+TDDNS_CHECK_ONLY=false
+TDDNS_TTL=3600
+TDDNS_UPDATE_PTR=false
