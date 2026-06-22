@@ -1,0 +1,13 @@
+[Unit]
+Description=Runs Technitium DDNS Updater every 5 minutes
+
+[Timer]
+# Run 1 minute after system boot up
+OnBootSec=1min
+# Run every 5 minutes thereafter
+OnUnitActiveSec=5min
+# Keeps the timer exact, preventing systemd from batching/delaying execution
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
