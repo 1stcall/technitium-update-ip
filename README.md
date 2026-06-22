@@ -1,5 +1,6 @@
 # Technitium Dynamic DNS (DDNS) Updater Script
 
+## Description
 A production-hardened Bash script to automatically monitor and update your public IPv4 (`A`) and IPv6 (`AAAA`) records using the **Technitium DNS Server API**. 
 
 Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration management (CLI flags, environment variables, and config files), and comprehensive error safety handling.
@@ -12,6 +13,11 @@ Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration man
 * **Native PTR Automation:** Features standard `-p` support to request native reverse DNS allocation updates via Technitium (`ptr=true`, `createPtrZone=true`).
 * **Layered Precedence Configuration:** Respects configurations in the following priority sequence:
     Command Line Flags -> Environment Variables -> Config File -> Defaults
+
+## Changelog
+0.1.0 Initial trial of concept coded exclusivly using chatgpt.  
+0.2.0 Initial trial using gemini and my own tweeks.  
+0.2.1 Updated readme with changelog and versioning.  
 
 ---
 
