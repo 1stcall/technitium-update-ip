@@ -70,13 +70,17 @@ for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
     curl -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/main/"$file"
 done
 
+# Update tddns.service with the instalation path and config file.
+sed -i -e "s/[INSTALLPATH]/$INSTALLPATH/g" "$DOWNTEMP"/tddns.service
+
 # Ensure destination folders exist.
-log 2 $(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")
+log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
 
 # Copy requred files to there destinations
-log 2 $(/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)
-log 2 $(/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)
-
+log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)"
+log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)"
+log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.service /lib/systemd/system/)"
+log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.timer /lib/systemd/system/)"
 # Make tddns.sh exicutable
 log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
 
