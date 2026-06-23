@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 # Adjust the path to match where your script is stored
-ExecStart=/usr/local/bin/tddns.sh
+ExecStart=[INSTALLPATH]/tddns.sh --config [CONFIGPATH]/tddns.conf
 # Runs the script with lower priority to stay lightweight
 Nice=19
 IOSchedulingClass=best-effort
