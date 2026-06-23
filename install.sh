@@ -66,12 +66,15 @@ log 2 "CONFPATH     :   $CONFPATH"
 DOWNTEMP=$(mktemp -d)
 for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
     log 2 "Running : curl -so $DOWNTEMP/$file \\
-                        https://raw.githubusercontent.com/$REPO/refs/heads/main/$file"
-    curl -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/main/"$file"
+                        https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/$file"
+    curl --fail-with-body -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/"$BRANCH"/"$file"
 done
 
 # Update tddns.service with the instalation path and config file.
-sed -i -e "s/[INSTALLPATH]/$INSTALLPATH/g" "$DOWNTEMP"/tddns.service
+log 2 "Running : sed -i -e \"s|\[INSTALLPATH\]|$INSTALLPATH|g\" $DOWNTEMP/tddns.service"
+sed -i -e "s|\[INSTALLPATH\]|$INSTALLPATH|g" "$DOWNTEMP"/tddns.service
+log 2 "Running : sed -i -e \"s|\[CONFIGFILE\]|$CONFPATH\/tddns.conf|g\" $DOWNTEMP/tddns.service"
+sed -i -e "s|\[CONFIGFILE\]|$CONFPATH/tddns.conf|g" "$DOWNTEMP"/tddns.service
 
 # Ensure destination folders exist.
 log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
