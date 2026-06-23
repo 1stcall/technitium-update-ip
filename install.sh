@@ -65,6 +65,7 @@ log 2 ""
 # Main processing starts here.
 
 # Download required files to a tempory folder.
+log 1 "Downloading required files from github."
 DOWNTEMP=$(mktemp -d)
 for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
     log 2 "Running : curl -so $DOWNTEMP/$file \\
@@ -73,6 +74,7 @@ for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
 done
 
 # Update tddns.service with the instalation & config paths.
+log 1 "Configureing service file."
 log 2 "Running : sed -i -e \"s|\[INSTALLPATH\]|$INSTALLPATH|g\" $DOWNTEMP/tddns.service"
 sed -i -e "s|\[INSTALLPATH\]|$INSTALLPATH|g" "$DOWNTEMP"/tddns.service
 log 2 "Running : sed -i -e \"s|\[CONFIGPATH\]|$CONFPATH\" $DOWNTEMP/tddns.service"
@@ -82,6 +84,7 @@ sed -i -e "s|\[CONFIGPATH\]|$CONFPATH|g" "$DOWNTEMP"/tddns.service
 log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
 
 # Copy requred files to there destinations
+log 1 "Installing files."
 log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)"
 log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)"
 log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.service /lib/systemd/system/)"
@@ -90,6 +93,8 @@ log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.timer /lib/systemd/system/)"
 log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
 
 # Remove tempory folder.
+log 1 "Cleaning up."
 log 2 $(rm -rv "$DOWNTEMP")
 
+log 1 "Complete."
 exit 0
