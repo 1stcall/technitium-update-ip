@@ -37,6 +37,7 @@ show_help() {
     echo "  -b, --branch BRANCH      Branch to install (default: main)."
     echo "  -i, --installpath PATH   Installation path (default: /usr/bin)."
     echo "  -c, --configpath PATH    Configuration path (default: /etc/tddns)."
+    echo "  -v, --verbose LEVEL      Set verboity level. 0=Quiet 1=Summary 2=Debugging (default 1)."
     echo "  -h, --help               Show this help menu."
     echo ""
     exit 0
