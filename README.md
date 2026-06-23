@@ -17,7 +17,8 @@ Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration man
 ## Changelog
 0.1.0 Initial trial of concept coded exclusivly using chatgpt.  
 0.2.0 Initial trial using gemini and my own tweeks.  
-0.2.1 Updated readme with changelog and versioning.  
+0.2.1 Updated readme with changelog and versioning.
+0.3.0 Added instalation script.
 
 ---
 
@@ -46,6 +47,14 @@ sudo apt install bats
 
 # macOS
 brew install bats-core
+```
+
+---
+
+## Installation
+To install using defaults:
+```bash
+curl https://raw.githubusercontent.com/1stcall/technitium-update-ip/refs/heads/main/install.sh | sudo bash
 ```
 
 ---
