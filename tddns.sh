@@ -145,8 +145,8 @@ process_record() {
     fi
 
     # 1. Fetch existing record from Technitium
-    log 5 "\n[DEBUG] running - curl -s $DNS_SERVER_URL/api/zones/records/get?token=<REDACTED>&domain=$DOMAIN&type=$RECORD_TYPE"
-    RECORD_RESOLVE=$(curl -s "$DNS_SERVER_URL/api/zones/records/get?token=$API_TOKEN&domain=$DOMAIN&type=$RECORD_TYPE")
+    log 5 "\n[DEBUG] running - curl -fSsL $DNS_SERVER_URL/api/zones/records/get?token=<REDACTED>&domain=$DOMAIN&type=$RECORD_TYPE"
+    RECORD_RESOLVE=$(curl -fSsL "$DNS_SERVER_URL/api/zones/records/get?token=$API_TOKEN&domain=$DOMAIN&type=$RECORD_TYPE")
     
     # Debug: Output prettified JSON payload using jq to stderr
     log 4 "\n[DEBUG] Prettified GET response for $RECORD_TYPE:"
@@ -186,7 +186,7 @@ process_record() {
 
     # 5. Push request to Technitium using the robust Add+Overwrite strategy
     log 5 "\n[DEBUG] running :-
-      curl -s -X POST \"$DNS_SERVER_URL/api/zones/records/add\" \\
+      curl -fSsL -X POST \"$DNS_SERVER_URL/api/zones/records/add\" \\
         -H \"Content-Type: application/x-www-form-urlencoded\" \\
         -d \"token=$API_TOKEN\" \\
         -d \"domain=$DOMAIN\" \\
@@ -196,7 +196,7 @@ process_record() {
         -d \"overwrite=true\" \\
         ${PTR_PARAMS[*]}"
 
-    UPDATE_RESPONSE=$(curl -s -X POST "$DNS_SERVER_URL/api/zones/records/add" \
+    UPDATE_RESPONSE=$(curl -fFsL -X POST "$DNS_SERVER_URL/api/zones/records/add" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         -d "token=$API_TOKEN" \
         -d "domain=$DOMAIN" \
@@ -231,10 +231,10 @@ else
 fi
 
 # Fetch current Public IPs (Guarded against lookup drops using || true)
-PUBLIC_IPV4=$(curl -4 -s https://icanhazip.com 2>/dev/null | tr -d '[:space:]' || echo "")
+PUBLIC_IPV4=$(curl -4 -fSsL https://icanhazip.com 2>/dev/null | tr -d '[:space:]' || echo "")
 log 3 "Public IPv4 Detected: ${PUBLIC_IPV4:-None}"
 
-PUBLIC_IPV6=$(curl -6 -s https://icanhazip.com 2>/dev/null | tr -d '[:space:]' || echo "")
+PUBLIC_IPV6=$(curl -6 -fSsL https://icanhazip.com 2>/dev/null | tr -d '[:space:]' || echo "")
 log 3 "Public IPv6 Detected: ${PUBLIC_IPV6:-None}"
 
 log 3 "------------------------------------------------"
