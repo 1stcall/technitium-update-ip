@@ -42,7 +42,7 @@ show_help() {
     exit 0
 }
 
-# Parse Command Line Arguments (Will overwrite config file and env vars)
+# Parse Command Line Arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         -r|--repo|--repository) REPO="$2"; shift 2 ;;
@@ -59,8 +59,10 @@ log 2 "REPO         :   $REPO"
 log 2 "BRANCH       :   $BRANCH"
 log 2 "INSTALLPATH  :   $INSTALLPATH"
 log 2 "CONFPATH     :   $CONFPATH"
+log 2 ""
 
-# Main processin starts here.
+##########################################################################################
+# Main processing starts here.
 
 # Download required files to a tempory folder.
 DOWNTEMP=$(mktemp -d)
@@ -70,11 +72,11 @@ for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
     curl --fail-with-body -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/"$BRANCH"/"$file"
 done
 
-# Update tddns.service with the instalation path and config file.
+# Update tddns.service with the instalation & config paths.
 log 2 "Running : sed -i -e \"s|\[INSTALLPATH\]|$INSTALLPATH|g\" $DOWNTEMP/tddns.service"
 sed -i -e "s|\[INSTALLPATH\]|$INSTALLPATH|g" "$DOWNTEMP"/tddns.service
-log 2 "Running : sed -i -e \"s|\[CONFIGFILE\]|$CONFPATH\/tddns.conf|g\" $DOWNTEMP/tddns.service"
-sed -i -e "s|\[CONFIGFILE\]|$CONFPATH/tddns.conf|g" "$DOWNTEMP"/tddns.service
+log 2 "Running : sed -i -e \"s|\[CONFIGPATH\]|$CONFPATH\" $DOWNTEMP/tddns.service"
+sed -i -e "s|\[CONFIGPATH\]|$CONFPATH|g" "$DOWNTEMP"/tddns.service
 
 # Ensure destination folders exist.
 log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
