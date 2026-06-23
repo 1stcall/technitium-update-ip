@@ -70,7 +70,7 @@ Then run the script with any of the following options :-
 | `-b` | `--branch BRANCH` | Branch to install (default: main). |
 | `-i` | `--installpath PATH` | Installation path (default: /usr/bin). |
 | `-c` | `--configpath PATH` | Configuration path (default: /etc/tddns). |
-| `-v` | `--verbose LEVEL` | Set Verboity level. 0=Quiet 1=Summary 2=Debugging (default 1). |
+| `-v` | `--verbose LEVEL` | Set verboity level. 0=Quiet 1=Summary 2=Debugging (default 1). |
 | `-h` | `--help` | Show this help menu. |
 
 Please note that ```sudo``` maybe required if installing to a location you do not have write permissions for. e.g. /usr/bin.
