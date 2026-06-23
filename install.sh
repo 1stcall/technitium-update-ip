@@ -33,7 +33,7 @@ show_help() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -r, --repo[sitory] URL   URL of the repository to install from (default: https://github.com/1stcall/technitium-update-ip)."
+    echo "  -r, --repository URL     URL of the repository to install from (default: 1stcall/technitium-update-ip)."
     echo "  -b, --branch BRANCH      Branch to install (default: main)."
     echo "  -i, --installpath PATH   Installation path (default: /usr/bin)."
     echo "  -c, --configpath PATH    Configuration path (default: /etc/tddns)."
@@ -64,22 +64,23 @@ log 2 "CONFPATH     :   $CONFPATH"
 
 # Download required files to a tempory folder.
 DOWNTEMP=$(mktemp -d)
-for file in tddns.sh tddns.conf.example; do
-    log 2 "Running : curl -so $DOWNTEMP/$file" "https://raw.githubusercontent.com/$REPO/refs/heads/main/$file"
+for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
+    log 2 "Running : curl -so $DOWNTEMP/$file \\
+                        https://raw.githubusercontent.com/$REPO/refs/heads/main/$file"
     curl -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/main/"$file"
 done
 
 # Ensure destination folders exist.
-/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH"
+log 2 $(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")
 
 # Copy requred files to there destinations
-/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/
-/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf
+log 2 $(/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)
+log 2 $(/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)
 
 # Make tddns.sh exicutable
-chmod -v +x "$INSTALLPATH"/tddns.sh
+log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
 
 # Remove tempory folder.
-rm -rv "$DOWNTEMP"
+log 2 $(rm -rv "$DOWNTEMP")
 
 exit 0
