@@ -33,7 +33,7 @@ show_help() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -r, --repository URL     URL of the repository to install from (default: 1stcall/technitium-update-ip)."
+    echo "  -r, --repository REPO    The github repository to install from (default: 1stcall/technitium-update-ip)."
     echo "  -b, --branch BRANCH      Branch to install (default: main)."
     echo "  -i, --installpath PATH   Installation path (default: /usr/bin)."
     echo "  -c, --configpath PATH    Configuration path (default: /etc/tddns)."
@@ -68,19 +68,19 @@ log 2 ""
 
 # Download required files to a tempory folder.
 log 1 "Downloading required files from github."
-DOWNTEMP=$(mktemp -d)
+DOWNTEMP=$(/usr/bin/mktemp -d)
 for file in tddns.sh tddns.conf.example tddns.service tddns.timer; do
-    log 2 "Running : curl -so $DOWNTEMP/$file \\
+    log 2 "Running : /usr/bin/curl -so $DOWNTEMP/$file \\
                         https://raw.githubusercontent.com/$REPO/refs/heads/$BRANCH/$file"
-    curl --fail-with-body -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/"$BRANCH"/"$file"
+    /usr/bin/curl --fail-with-body -so "$DOWNTEMP/$file" https://raw.githubusercontent.com/"$REPO"/refs/heads/"$BRANCH"/"$file"
 done
 
 # Update tddns.service with the instalation & config paths.
 log 1 "Configureing service file."
-log 2 "Running : sed -i -e \"s|\[INSTALLPATH\]|$INSTALLPATH|g\" $DOWNTEMP/tddns.service"
-sed -i -e "s|\[INSTALLPATH\]|$INSTALLPATH|g" "$DOWNTEMP"/tddns.service
-log 2 "Running : sed -i -e \"s|\[CONFIGPATH\]|$CONFPATH\" $DOWNTEMP/tddns.service"
-sed -i -e "s|\[CONFIGPATH\]|$CONFPATH|g" "$DOWNTEMP"/tddns.service
+log 2 "Running : /usr/bin/sed -i -e \"s|\[INSTALLPATH\]|$INSTALLPATH|g\" $DOWNTEMP/tddns.service"
+/usr/bin/sed -i -e "s|\[INSTALLPATH\]|$INSTALLPATH|g" "$DOWNTEMP"/tddns.service
+log 2 "Running : /usr/bin/sed -i -e \"s|\[CONFIGPATH\]|$CONFPATH\" $DOWNTEMP/tddns.service"
+/usr/bin/sed -i -e "s|\[CONFIGPATH\]|$CONFPATH|g" "$DOWNTEMP"/tddns.service
 
 # Ensure destination folders exist.
 log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
@@ -92,12 +92,9 @@ log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/td
 log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.service /lib/systemd/system/)"
 log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.timer /lib/systemd/system/)"
 
-# Make tddns.sh exicutable
-#log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
-
 # Remove tempory files & folder.
 log 1 "Cleaning up."
-log 2 $(rm -rv "$DOWNTEMP")
+log 2 "$(/usr/bin/rm -rv "$DOWNTEMP")"
 
 log 1 "Complete."
 exit 0
