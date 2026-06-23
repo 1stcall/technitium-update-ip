@@ -87,14 +87,15 @@ log 2 "$(/usr/bin/mkdir -pv "$CONFPATH" "$INSTALLPATH")"
 
 # Copy requred files to there destinations
 log 1 "Installing files."
-log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)"
-log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)"
-log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.service /lib/systemd/system/)"
-log 2 "$(/usr/bin/cp -av "$DOWNTEMP"/tddns.timer /lib/systemd/system/)"
-# Make tddns.sh exicutable
-log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
+log 2 "$(/usr/bin/install -vm 0755 "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/)"
+log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf)"
+log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.service /lib/systemd/system/)"
+log 2 "$(/usr/bin/install -vm 0644 "$DOWNTEMP"/tddns.timer /lib/systemd/system/)"
 
-# Remove tempory folder.
+# Make tddns.sh exicutable
+#log 2 $(chmod -v +x "$INSTALLPATH"/tddns.sh)
+
+# Remove tempory files & folder.
 log 1 "Cleaning up."
 log 2 $(rm -rv "$DOWNTEMP")
 
