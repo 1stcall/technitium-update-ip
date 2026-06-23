@@ -15,10 +15,13 @@ Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration man
     Command Line Flags -> Environment Variables -> Config File -> Defaults
 
 ## Changelog
-- v0.1.0 - Initial trial of concept coded exclusivly using chatgpt.  
-- v0.2.0 - Initial trial using gemini and my own tweeks.  
-- v0.2.1 - Updated readme with changelog and versioning.  
-- v0.3.0 - Added instalation script.  
+| Version | Description |
+| :--- | :--- |
+| v0.1.0 | Initial trial of concept coded exclusivly using chatgpt. |
+| v0.2.0 | Initial trial using gemini and my own tweeks. |
+| v0.2.1 | Updated readme with changelog and versioning. |
+| v0.3.0 | Added instalation script. |
+| v1.0.0beta | V1 Beta release. |
 
 ---
 
