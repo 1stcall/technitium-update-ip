@@ -138,19 +138,12 @@ fi
 process_record() {
     local RECORD_TYPE=$1
     local CURRENT_IP=$2
+    local RECORD_RESOLVE=$3
 
     if [ -z "$CURRENT_IP" ]; then
         log 1 "Skipping $RECORD_TYPE: No valid public IP provided."
         return 1
     fi
-
-    # 1. Fetch existing record from Technitium
-    log 5 "\n[DEBUG] running - curl -fSsL $DNS_SERVER_URL/api/zones/records/get?token=<REDACTED>&domain=$DOMAIN&type=$RECORD_TYPE"
-    RECORD_RESOLVE=$(curl -fSsL "$DNS_SERVER_URL/api/zones/records/get?token=$API_TOKEN&domain=$DOMAIN&type=$RECORD_TYPE")
-    
-    # Debug: Output prettified JSON payload using jq to stderr
-    log 4 "\n[DEBUG] Prettified GET response for $RECORD_TYPE:"
-    log 4 "$(echo "$RECORD_RESOLVE" | jq .)"
 
     # Robust Filter: Scans the array and matches by record type explicitly (Both A and AAAA use .ipAddress inside rData)
     EXISTING_IP=$(echo "$RECORD_RESOLVE" | jq -r --arg type "$RECORD_TYPE" '.response.records[] | select(.type==$type) | .rData.ipAddress // empty' | head -n 1 || echo "")
@@ -186,7 +179,7 @@ process_record() {
 
     # 5. Push request to Technitium using the robust Add+Overwrite strategy
     log 5 "\n[DEBUG] running :-
-      curl -fSsL -X POST \"$DNS_SERVER_URL/api/zones/records/add\" \\
+      curl -fsL -X POST \"$DNS_SERVER_URL/api/zones/records/add\" \\
         -H \"Content-Type: application/x-www-form-urlencoded\" \\
         -d \"token=$API_TOKEN\" \\
         -d \"domain=$DOMAIN\" \\
@@ -196,7 +189,7 @@ process_record() {
         -d \"overwrite=true\" \\
         ${PTR_PARAMS[*]}"
 
-    UPDATE_RESPONSE=$(curl -fFsL -X POST "$DNS_SERVER_URL/api/zones/records/add" \
+    UPDATE_RESPONSE=$(curl -fsL -X POST "$DNS_SERVER_URL/api/zones/records/add" \
         -H "Content-Type: application/x-www-form-urlencoded" \
         -d "token=$API_TOKEN" \
         -d "domain=$DOMAIN" \
@@ -239,9 +232,17 @@ log 3 "Public IPv6 Detected: ${PUBLIC_IPV6:-None}"
 
 log 3 "------------------------------------------------"
 
+# 1. Fetch existing record from Technitium
+log 5 "\n[DEBUG] running - curl -fSsL $DNS_SERVER_URL/api/zones/records/get?token=<REDACTED>&domain=$DOMAIN"
+RECORD_RESOLVE=$(curl -fSsL "$DNS_SERVER_URL/api/zones/records/get?token=$API_TOKEN&domain=$DOMAIN")
+    
+# Debug: Output prettified JSON payload using jq to stderr
+log 4 "\n[DEBUG] Prettified GET response for $DOMAIN:"
+log 4 "$(echo "$RECORD_RESOLVE" | jq .)"
+
 # Process IPv4 / A Record
 if [ -n "$PUBLIC_IPV4" ]; then
-    process_record "A" "$PUBLIC_IPV4"
+    process_record "A" "$PUBLIC_IPV4" "$RECORD_RESOLVE"
 else
     log 3 "Warning: No public IPv4 address detected. Skipping A record."
 fi
@@ -250,7 +251,7 @@ log 3 "------------------------------------------------"
 
 # Process IPv6 / AAAA Record
 if [ -n "$PUBLIC_IPV6" ]; then
-    process_record "AAAA" "$PUBLIC_IPV6"
+    process_record "AAAA" "$PUBLIC_IPV6" "$RECORD_RESOLVE"
 else
     log 3 "Warning: No public IPv6 address detected. Skipping AAAA record."
 fi
