@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # --- DEPENDENCY & BASH VERSION CHECKS ---
