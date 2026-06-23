@@ -76,6 +76,9 @@ done
 /usr/bin/cp -av "$DOWNTEMP"/tddns.sh "$INSTALLPATH"/
 /usr/bin/cp -av "$DOWNTEMP"/tddns.conf.example "$CONFPATH"/tddns.conf
 
+# Make tddns.sh exicutable
+chmod -v +x "$INSTALLPATH"/tddns.sh
+
 # Remove tempory folder.
 rm -rv "$DOWNTEMP"
 
