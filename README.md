@@ -66,11 +66,12 @@ chmod +x ~/install.sh
 Then run the script with any of the following options :-
 | Short Flag | Long Flag | Description |
 | :--- | :--- | :--- |
-| -r, | --repository URL | URL of the repository to install from (default: 1stcall/technitium-update-ip). |
-| -b, | --branch BRANCH | Branch to install (default: main). |
-| -i, | --installpath PATH | Installation path (default: /usr/bin). |
-| -c, | --configpath PATH | Configuration path (default: /etc/tddns). |
-| -h, | --help | Show this help menu. |
+| `-r` | `--repository REPO` | The github repository to install from (default: 1stcall/technitium-update-ip). |
+| `-b` | `--branch BRANCH` | Branch to install (default: main). |
+| `-i` | `--installpath PATH` | Installation path (default: /usr/bin). |
+| `-c` | `--configpath PATH` | Configuration path (default: /etc/tddns). |
+| `-v` | `--verbose LEVEL` | Set Verboity level. 0=Quiet 1=Summary 2=Debugging (default 1). |
+| `-h` | `--help` | Show this help menu. |
 
 Please note that ```sudo``` maybe required if installing to a location you do not have write permissions for. e.g. /usr/bin.
 
