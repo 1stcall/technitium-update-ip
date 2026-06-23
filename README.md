@@ -15,9 +15,10 @@ Featuring native Reverse DNS (`PTR`) automation, multi-layered configuration man
     Command Line Flags -> Environment Variables -> Config File -> Defaults
 
 ## Changelog
-0.1.0 Initial trial of concept coded exclusivly using chatgpt.  
-0.2.0 Initial trial using gemini and my own tweeks.  
-0.2.1 Updated readme with changelog and versioning.  
+- v0.1.0 - Initial trial of concept coded exclusivly using chatgpt.  
+- v0.2.0 - Initial trial using gemini and my own tweeks.  
+- v0.2.1 - Updated readme with changelog and versioning.  
+- v0.3.0 - Added instalation script.  
 
 ---
 
@@ -47,6 +48,32 @@ sudo apt install bats
 # macOS
 brew install bats-core
 ```
+
+---
+
+## Installation
+To install using defaults:
+```bash
+curl https://raw.githubusercontent.com/1stcall/technitium-update-ip/refs/heads/main/install.sh | sudo bash
+```
+
+The installation script has several options.  If you wish to use anything other than the defaults, you will need to download the script and run it locally.  
+e.g.
+```bash
+curl -o ~/install.sh https://raw.githubusercontent.com/1stcall/technitium-update-ip/refs/heads/main/install.sh
+chmod +x ~/install.sh
+```
+Then run the script with any of the following options :-
+| Short Flag | Long Flag | Description |
+| :--- | :--- | :--- |
+| `-r` | `--repository REPO` | The github repository to install from (default: 1stcall/technitium-update-ip). |
+| `-b` | `--branch BRANCH` | Branch to install (default: main). |
+| `-i` | `--installpath PATH` | Installation path (default: /usr/bin). |
+| `-c` | `--configpath PATH` | Configuration path (default: /etc/tddns). |
+| `-v` | `--verbose LEVEL` | Set Verboity level. 0=Quiet 1=Summary 2=Debugging (default 1). |
+| `-h` | `--help` | Show this help menu. |
+
+Please note that ```sudo``` maybe required if installing to a location you do not have write permissions for. e.g. /usr/bin.
 
 ---
 
