@@ -6,7 +6,7 @@ export REPO=1stcall/technitium-update-ip
 export BRANCH=main
 export INSTALLPATH=/usr/bin
 export CONFPATH=/etc/tddns
-export VERBOSE=2
+export VERBOSE=1
 export DOWNTEMP
 
 # Helper functions
@@ -50,6 +50,7 @@ while [[ $# -gt 0 ]]; do
         -i|--installpath)       INSTALLPATH="$2"; shift 2 ;;
         -c|--confpath)          CONFPATH="$2"; shift 2 ;;
         -h|--help)              show_help ;;
+        -v|--verbose)           VERBOSE="$2"; shift 2 ;;
         *) echo "Unknown option: $1" >&2; show_help ;;
     esac
 done
@@ -59,6 +60,7 @@ log 2 "REPO         :   $REPO"
 log 2 "BRANCH       :   $BRANCH"
 log 2 "INSTALLPATH  :   $INSTALLPATH"
 log 2 "CONFPATH     :   $CONFPATH"
+log 2 "VERBOSE      :   $VERBOSE"
 log 2 ""
 
 ##########################################################################################
